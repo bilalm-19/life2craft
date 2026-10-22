@@ -1,0 +1,20 @@
+# Background removal (cutout.py). Windows/Linux: GPU build, which uses an NVIDIA GPU if one is set up and otherwise falls back to the CPU.
+rembg[gpu]; sys_platform != "darwin"
+# macOS has no GPU build, so it gets the CPU one.
+rembg[cpu]; sys_platform == "darwin"
+
+# Image loading and saving (cutout.py)
+pillow
+
+# Arrays and image processing (voxelise.py, match.py)
+numpy
+scipy
+
+# Colour conversion and colour difference: Lab, CIEDE2000 (voxelise.py, match.py)
+scikit-image
+
+# K-means colour grouping (match.py)
+scikit-learn
+
+# .schem export (export.py)
+mcschematic
