@@ -1,6 +1,6 @@
 """Photo -> Minecraft .schem.
 
-    python src/main.py data/inputs/eiffel_tower.jpg --height 330 --round --pitch 1.5
+    python src/main.py data/inputs/eiffel_tower.jpg --height 330 --carve
     python src/main.py data/inputs/house.jpg --height 5.5 --depth 14 --pitch 0.25
 """
 import argparse
@@ -12,7 +12,7 @@ import numpy as np
 from cutout import get_subject_img
 from export import save_schem
 from match import match_cells, summarise
-from voxelise import MC_BLOCK_DIMS, extrude, grid_size, hollow, resample_dominant, revolve
+from voxelise import MC_BLOCK_DIMS, carve, extrude, grid_size, hollow, resample_dominant, revolve
 
 PALETTE_PATH = Path(__file__).resolve().parent.parent / "data" / "palette.json"    # src/main.py -> project root -> data/
 with open(PALETTE_PATH) as f:
@@ -37,6 +37,7 @@ def main():
     ap.add_argument("--width", type=float, help="real width in metres")
     ap.add_argument("--depth", type=float, help="metres front to back, if not round (default: as wide as it is)")
     ap.add_argument("--round", action="store_true", help="a round tower: spin the silhouette around its axis")
+    ap.add_argument("--carve", action="store_true", help="a square tower (e.g. the Eiffel Tower): same silhouette on all four sides")
     ap.add_argument("--pitch", type=float, default=MC_BLOCK_DIMS, help="metres per block")
     ap.add_argument("--colours", type=int, default=12, help="number of colour groups (materials)")
     ap.add_argument("--gain", type=float, default=1.4, help="brightening to make up for Minecraft's face shading")
@@ -46,20 +47,25 @@ def main():
     ap.add_argument("--out", default="output")
     args = ap.parse_args()
 
+    if args.height is None and args.width is None:
+        ap.error("give --height and/or --width")
+    if args.round and args.carve:
+        ap.error("use --round or --carve, not both")
+
     # 1. Cutout (also saved as a PNG by get_subject_img)
     cutout = get_subject_img([args.photo])[0]
     rgb, mask = cutout_to_arrays(cutout)
-
     # 2. 2D grid, then 3D
     H, W = grid_size(mask, args.height, args.width, args.pitch)
     print(f"grid: {W} wide x {H} tall blocks ({args.pitch:g} m per block)")
     solid, colour = resample_dominant(rgb, mask, H, W)
+    depth_blocks = max(1, round((args.depth if args.depth else W * args.pitch) / args.pitch))
     if args.round:
         occ, idx, cell = revolve(solid)
+    elif args.carve:
+        occ, idx, cell = carve(solid, depth_blocks)
     else:
-        depth_blocks = max(1, round((args.depth if args.depth else W * args.pitch) / args.pitch))
         occ, idx, cell = extrude(solid, depth_blocks)
-    print(f"{len(idx):,} blocks before hollowing")
 
     # 3. Blocks
     grid = match_cells(colour, solid, PALETTE, k=args.colours, gain=args.gain)

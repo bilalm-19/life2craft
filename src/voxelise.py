@@ -121,4 +121,60 @@ def hollow(occ, idx):
     """Keep only the blocks that touch air (the shell). Far fewer blocks, and the file stays small."""
     inner = ndimage.binary_erosion(occ)
     return ~inner[idx[:, 0], idx[:, 1], idx[:, 2]]
- 
+
+def carve(solid, depth_blocks):
+    """Square tower: keep a block only where both the front and side silhouettes are solid.
+
+    With one photo, the side silhouette is a copy of the front, so depth at each height equals the width there.
+    Layers get shallower as the silhouette narrows (the front face slopes back going up), and gaps in the
+    silhouette (between the legs) stay open all the way through. Suits symmetric, tapering towers; use extrude() for a house.
+
+    solid:        (H, W) True where the front photo is subject.
+    depth_blocks: depth of the widest layer, in blocks. You choose it; a single photo cannot supply it.
+    Returns the same three things as revolve():
+        occ:  (H, W, D) True where a block is, indexed (y, x, z)
+        idx:  (n, 3) each block's position as (y, x, z)
+        cell: (n, 2) each block's (row, column) in the 2D colour grid
+    """
+    H, W = solid.shape
+    D = depth_blocks
+
+    # ---- Shape ----
+    # The side silhouette is the front one stretched from W columns to D depth positions.
+    # z_to_col[z] is the photo column that depth position z shows.
+    # Example: a photo 5 columns wide (columns 0-4) and 10 depth positions (z = 0-9):
+    #          z = 0, 1, 2, ..., 9 show photo columns [0, 0, 1, 1, 2, 2, 3, 3, 4, 4]
+    z_to_col = np.minimum(((np.arange(D) + 0.5) * W / D).astype(int), W - 1)
+    side = solid[:, z_to_col]                          # (H, D)
+
+    # Keep a block only where BOTH silhouettes are solid (solid[:, :, None] alone would be extrude()).
+    # Each layer is then a rectangle, with width and depth both set by the silhouette's width at that height.
+    occ = solid[:, :, None] & side[:, None, :]         # (H, W, D)
+    idx = np.argwhere(occ)
+    y, x, z = idx.T
+
+    # ---- Colour: each face shows the photo, read left to right as seen from outside that face ----
+    # Each block uses the face it is nearest to.
+    cx, cz = (W - 1) / 2, (D - 1) / 2
+    near_side_face = np.abs(x - cx) / max(cx, 1) > np.abs(z - cz) / max(cz, 1)    # nearest a west/east face (else front/back)
+    is_east = near_side_face & (x > cx)
+    is_back = ~near_side_face & (z < cz)
+
+    # Along a face only one coordinate changes: x on the front/back faces, z on the west/east faces
+    # (x runs east, z runs south, the front is +z). Facing a wall, the photo's columns must rise toward your
+    # right hand, so some faces use a flipped index.
+    # Example of a flip, with a photo 5 columns wide (columns 0-4): the blocks at x = 0, 1, 2, 3, 4
+    # show photo columns W-1-x = 4, 3, 2, 1, 0.
+    #   front (+z):  x                right hand = east
+    #   back  (-z):  W-1-x            right hand = west, so flip x
+    #   west  (-x):  z_to_col[z]      right hand = south
+    #   east  (+x):  z_to_col[D-1-z]  right hand = north, so flip z
+    wanted = np.where(near_side_face,
+                      np.where(is_east, z_to_col[D - 1 - z], z_to_col[z]),
+                      np.where(is_back, W - 1 - x, x))
+
+    # The unflipped column is always solid; the flipped one only if the silhouette is left-right symmetric.
+    # Otherwise fall back to the unflipped column (that face may then be mirrored).
+    plain = np.where(near_side_face, z_to_col[z], x)
+    col = np.where(solid[y, wanted], wanted, plain)
+    return occ, idx, np.stack([y, col], 1)
