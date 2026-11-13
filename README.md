@@ -16,16 +16,13 @@ Each figure shows the photo, its cutout, and the build in game. To understand th
 python src/main.py data/inputs/eiffel_tower.jpg --height 330 --carve --name eiffel_carve
 ```
 
-The tower is square, tapers, and looks much the same from all four sides, which is what `--carve` assumes. The side
-silhouette is taken to be a copy of the front, so the depth shrinks as the tower narrows (the base is as deep as it is
-wide, since no `--depth` is given), the front face slopes back going up, and the gap between the legs stays open.
-`--round` would turn it into a round mound, and the default `extrude` would make the spire as deep as the base.
-`--height 330` is its real height in metres; at the default 1 m per block that is 330 blocks tall.
+- **`--carve`:** a square tower that tapers and looks the same from all four sides. `--round` would make a round mound, and the default `extrude` would make the spire as deep as the base.
+- **Depth:** no `--depth`, so the base is as deep as it is wide. Each layer above is shallower, so the front slopes back going up and the gap between the legs stays open.
+- **`--height 330`:** its real height in metres, so 330 blocks tall at 1 m per block.
 
 ![Eiffel Tower: photo, cutout and in-game build](data/figures/eiffel_tower.png)
 
-The gap between the legs is open and the lattice shows on every face. The arch is still filled in, because the cutout
-counts the background seen through it as part of the tower.
+The lattice shows on every face. The arch is filled in, because the cutout counts the background seen through it as part of the tower.
 
 ### Telstra Tower
 
@@ -33,9 +30,9 @@ counts the background seen through it as part of the tower.
 python src/main.py data/inputs/telstra-tower.jpg --height 195 --round --name telstra_round
 ```
 
-The shaft and the dish levels are round. `--round` makes every row a filled circle as wide as the silhouette is there,
-so the depth at each height equals the width, and the shaft and dish levels come out round and centred on one axis.
-`--carve` would make the same tower square. `--height 195` is its real height in metres (about 195 m).
+- **`--round`:** the shaft and dish levels are round. Every row becomes a filled circle as wide as the silhouette there. `--carve` would make it square.
+- **Depth:** equal to the width at each height, so `--depth` is ignored.
+- **`--height 195`:** its real height in metres (about 195 m).
 
 ![Telstra Tower: photo, cutout and in-game build](data/figures/telstra_tower.png)
 
@@ -47,16 +44,13 @@ The dishes are not modelled separately: only the outline's width at each height 
 python src/main.py data/inputs/big_ben.jpg --height 96 --carve --pitch 0.5 --name big_ben_large
 ```
 
-The Elizabeth Tower is square, tapering and symmetric, so `--carve` fits. With no `--depth`, the base is as deep as it
-is wide and each layer above is shallower. At the default 1 m per block it is only about 15 to 20 blocks wide, so each
-clock face gets just a few blocks. `--pitch 0.5` makes each block half a metre, which gives a build twice as tall (192
-blocks) and gives the clock faces more blocks. A smaller pitch also makes the build much bigger and the run slower.
+- **`--carve`:** the tower is square, tapering and symmetric.
+- **Depth:** no `--depth`, so the base is as deep as it is wide, and each layer above is shallower.
+- **`--pitch 0.5`:** half-metre blocks give 192 blocks tall, and more blocks per clock face. At 1 m the tower is only about 15 to 20 blocks wide. The build is bigger and the run slower.
 
 ![Big Ben: photo, cutout and in-game build](data/figures/big_ben.png)
 
-The cutout kept the bus and a smear under the tower, so the build has a bus-shaped mass at its base. In the second
-view the left face comes out grey with horizontal stripes instead of showing the clock. This is a known problem, likely
-caused by the bus making the silhouette off-centre.
+The cutout kept the bus and a smear under the tower, so the build has a bus-shaped mass at its base. In the second view the left face is grey with horizontal stripes instead of showing the clock. This is a known problem, likely caused by the bus making the silhouette off-centre.
 
 ## ✨ How it works
 
