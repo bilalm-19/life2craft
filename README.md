@@ -5,6 +5,59 @@ anything with a clear outline: a tower, a building, a statue, a bridge.
 
 `📸 photo` ➜ `✂️ cutout` ➜ `🔲 grid` ➜ `🧊 3D` ➜ `🎨 blocks` ➜ `💾 .schem`
 
+## 🗼 Examples
+
+Each figure shows the photo, its cutout, and the build in game. To understand the commands, see
+[How it works](#-how-it-works), [Choosing a shape](#-choosing-a-shape), [Usage](#-usage) and [Options](#-options).
+
+### Eiffel Tower
+
+```
+python src/main.py data/inputs/eiffel_tower.jpg --height 330 --carve --name eiffel_carve
+```
+
+The tower is square, tapers, and looks much the same from all four sides, which is what `--carve` assumes. The side
+silhouette is taken to be a copy of the front, so the depth shrinks as the tower narrows (the base is as deep as it is
+wide, since no `--depth` is given), the front face slopes back going up, and the gap between the legs stays open.
+`--round` would turn it into a round mound, and the default `extrude` would make the spire as deep as the base.
+`--height 330` is its real height in metres; at the default 1 m per block that is 330 blocks tall.
+
+![Eiffel Tower: photo, cutout and in-game build](data/figures/eiffel_tower.png)
+
+The gap between the legs is open and the lattice shows on every face. The arch is still filled in, because the cutout
+counts the background seen through it as part of the tower.
+
+### Telstra Tower
+
+```
+python src/main.py data/inputs/telstra-tower.jpg --height 195 --round --name telstra_round
+```
+
+The shaft and the dish levels are round. `--round` makes every row a filled circle as wide as the silhouette is there,
+so the depth at each height equals the width, and the shaft and dish levels come out round and centred on one axis.
+`--carve` would make the same tower square. `--height 195` is its real height in metres (about 195 m).
+
+![Telstra Tower: photo, cutout and in-game build](data/figures/telstra_tower.png)
+
+The dishes are not modelled separately: only the outline's width at each height is used.
+
+### Big Ben
+
+```
+python src/main.py data/inputs/big_ben.jpg --height 96 --carve --pitch 0.5 --name big_ben_large
+```
+
+The Elizabeth Tower is square, tapering and symmetric, so `--carve` fits. With no `--depth`, the base is as deep as it
+is wide and each layer above is shallower. At the default 1 m per block it is only about 15 to 20 blocks wide, so each
+clock face gets just a few blocks. `--pitch 0.5` makes each block half a metre, which gives a build twice as tall (192
+blocks) and gives the clock faces more blocks. A smaller pitch also makes the build much bigger and the run slower.
+
+![Big Ben: photo, cutout and in-game build](data/figures/big_ben.png)
+
+The cutout kept the bus and a smear under the tower, so the build has a bus-shaped mass at its base. In the second
+view the left face comes out grey with horizontal stripes instead of showing the clock. This is a known problem, likely
+caused by the bus making the silhouette off-centre.
+
 ## ✨ How it works
 
 1. **✂️ Cutout** (`cutout.py`): `rembg` removes the background and saves a transparent PNG. Its alpha channel
@@ -31,17 +84,19 @@ In Minecraft, +x is east and +z is south.
 
 ## 📐 Choosing a shape
 
-One photo has no depth, so the depth is a guess. The shape flag chooses how to guess it.
+One photo has no depth, so the depth is a guess. The shape flag chooses how to guess it, and `--depth` (metres) sets it
+where it applies.
 
-| Flag | What it does | Good for |
-|---|---|---|
-| none (`extrude`) | pushes the silhouette straight back by `--depth`, so every height is equally deep | houses, signs, bridges, anything flat or boxy |
-| `--round` (`revolve`) | makes each row a filled circle as wide as the silhouette there | round objects: water towers, columns, vases, tree trunks |
-| `--carve` | keeps a block only where the front and side silhouettes are both solid, with the side taken as a copy of the front | square objects that taper and look the same from the side: the Eiffel Tower, pylons, pyramids |
+| Flag | What it does | Depth | Good for |
+|---|---|---|---|
+| none (`extrude`) | pushes the silhouette straight back | `--depth` at every height (default: as wide as the grid) | houses, signs, bridges, anything flat or boxy |
+| `--round` (`revolve`) | makes each row a filled circle as wide as the silhouette there | equal to the width at each height; `--depth` is ignored | round objects: water towers, columns, vases, tree trunks |
+| `--carve` | keeps a block only where the front and side silhouettes are both solid, with the side taken as a copy of the front | `--depth` sets the widest layer; narrower layers get less, equal to their width | square objects that taper and look the same from the side: the Eiffel Tower, pylons, pyramids |
 
 `--carve` makes depth shrink with width, so the front face slopes back going up, gaps in the silhouette (such as
 between the Eiffel Tower's legs) stay open, and all four faces show the photo. `--round` fills gaps, because each
-circle is solid across its full width.
+circle is solid across its full width. There is no relief: windows, arches and clock faces are painted on with
+colour, not carved in.
 
 ## 🚀 Usage
 
